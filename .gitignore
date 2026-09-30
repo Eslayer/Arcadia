@@ -1,0 +1,54 @@
+# ============================================
+# .gitignore — Proyecto Arcadia Comics
+# ============================================
+
+# === Dependencias de Node.js ===
+**/node_modules/
+
+# === Builds de Frontend (se regeneran con npm run build) ===
+**/dist/
+
+# === Builds de Maven / Java ===
+**/target/
+*.class
+*.jar
+*.war
+
+# === Variables de entorno (contienen secretos) ===
+**/.env
+**/.env.local
+**/.env.production
+**/.env.*.local
+
+# === Archivos de IDE ===
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# === Sistema operativo ===
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# === Logs ===
+*.log
+**/logs/
+
+# === Maven Wrapper (ya incluido, pero el JAR descargado no) ===
+**/.mvn/wrapper/maven-wrapper.jar
+
+# === Archivos comprimidos del proyecto ===
+*.tar.gz
+*.zip
+
+# === Archivos compilados de prueba sueltos ===
+reset_db.class
+test_connection.class
+
+# === Archivos de log específicos ===
+usuarios_log.txt

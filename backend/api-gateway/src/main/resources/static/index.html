@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arcadia — API Manager</title>
+  <style>
+    :root {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --surface2:  #273449;
+      --border:    #334155;
+      --accent:    #6366f1;
+      --accent2:   #818cf8;
+      --success:   #22c55e;
+      --danger:    #ef4444;
+      --warning:   #f59e0b;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --font:      'Segoe UI', system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+    /* ── Topbar ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 24px; height: 56px;
+    }
+    .brand { font-weight: 700; font-size: 1.1rem; color: var(--accent2); display: flex; align-items: center; gap: 8px; }
+    .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    nav { display: flex; gap: 4px; margin-left: auto; }
+    .tab-btn {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      padding: 6px 14px; border-radius: 6px; font-size: .9rem; transition: all .15s;
+    }
+    .tab-btn:hover { background: var(--surface2); color: var(--text); }
+    .tab-btn.active { background: var(--accent); color: #fff; }
+
+    /* ── Layout ── */
+    main { padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
+    .section { display: none; }
+    .section.active { display: block; }
+    h2 { font-size: 1.3rem; margin-bottom: 20px; color: var(--accent2); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-bottom: 20px;
+    }
+    .card-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .card-row input, .card-row select {
+      flex: 1; min-width: 160px; background: var(--surface2);
+      border: 1px solid var(--border); color: var(--text);
+      padding: 8px 12px; border-radius: 6px; font-size: .9rem;
+    }
+    .card-row input:focus, .card-row select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;
+      font-size: .85rem; font-weight: 600; transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger  { background: var(--danger);  color: #fff; }
+    .btn-warning { background: var(--warning);  color: #0f172a; }
+    .btn-sm { padding: 5px 10px; font-size: .8rem; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th { background: var(--surface2); color: var(--muted); text-align: left; padding: 10px 12px; font-weight: 600; }
+    td { padding: 10px 12px; border-top: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: rgba(99,102,241,.05); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      font-size: .75rem; font-weight: 700;
+    }
+    .badge-green { background: rgba(34,197,94,.15); color: var(--success); }
+    .badge-red   { background: rgba(239,68,68,.15);  color: var(--danger); }
+    .badge-blue  { background: rgba(99,102,241,.2);  color: var(--accent2); }
+
+    /* ── Status indicator ── */
+    .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .status-card {
+      flex: 1; min-width: 160px; background: var(--surface2); border-radius: 8px;
+      padding: 16px; border-left: 4px solid var(--accent);
+    }
+    .status-card .label { font-size: .8rem; color: var(--muted); margin-bottom: 4px; }
+    .status-card .value { font-size: 1.6rem; font-weight: 700; }
+
+    /* ── Key display ── */
+    .key-code {
+      font-family: 'Courier New', monospace; font-size: .82rem;
+      background: var(--surface2); padding: 2px 8px; border-radius: 4px;
+      color: var(--accent2);
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--accent); color: #fff; padding: 12px 20px;
+      border-radius: 8px; font-size: .9rem; display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,.4); z-index: 999;
+    }
+
+    /* ── Logs ── */
+    .log-method { font-weight: 700; font-size: .78rem; }
+    .log-200 { color: var(--success); }
+    .log-4xx { color: var(--warning); }
+    .log-5xx { color: var(--danger); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><div class="brand-dot"></div> Arcadia — API Manager</div>
+  <nav>
+    <button class="tab-btn active" onclick="showTab('dashboard', this)">📊 Dashboard</button>
+    <button class="tab-btn" onclick="showTab('rutas', this)">🔀 Rutas</button>
+    <button class="tab-btn" onclick="showTab('keys', this)">🔑 API Keys</button>
+    <button class="tab-btn" onclick="showTab('logs', this)">📋 Logs</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ══════════ DASHBOARD ══════════ -->
+  <section id="dashboard" class="section active">
+    <h2>Estado del API Manager · Arcadia Comics</h2>
+    <div class="status-row">
+      <div class="status-card" style="border-color: var(--accent)">
+        <div class="label">Rutas Registradas</div>
+        <div class="value" id="stat-rutas">—</div>
+      </div>
+      <div class="status-card" style="border-color: var(--success)">
+        <div class="label">Rutas Activas</div>
+        <div class="value" id="stat-rutas-activas">—</div>
+      </div>
+      <div class="status-card" style="border-color: var(--accent2)">
+        <div class="label">API Keys Totales</div>
+        <div class="value" id="stat-keys">—</div>
+      </div>
+      <div class="status-card" style="border-color: var(--warning)">
+        <div class="label">Logs Registrados</div>
+        <div class="value" id="stat-logs">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:12px; font-size:.95rem; color:var(--muted)">Microservicios Registrados</h3>
+      <table>
+        <thead><tr><th>Nombre</th><th>Patrón</th><th>URL Destino</th><th>Rate Limit/min</th><th>Estado</th></tr></thead>
+        <tbody id="dash-rutas-body"><tr><td colspan="5" style="color:var(--muted);text-align:center">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:8px;font-size:.95rem;color:var(--muted)">Cómo usar el Proxy</h3>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.7">
+        El API Manager expone el proxy en <strong style="color:var(--accent2)">http://localhost:8083</strong>.<br>
+        Envía tus peticiones a las mismas rutas que usaba el frontend, y opcionalmente agrega el header
+        <code class="key-code">X-API-Key: &lt;tu-clave&gt;</code> para autenticación.<br><br>
+        Ejemplos:<br>
+        <code class="key-code">GET http://localhost:8083/api/usuarios</code> → ms-usuarios (8085)<br>
+        <code class="key-code">GET http://localhost:8083/api/comics</code>   → ms-comics (8081)<br>
+        <code class="key-code">GET http://localhost:8083/orders</code>        → ms-ventas (8082)
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════ RUTAS ══════════ -->
+  <section id="rutas" class="section">
+    <h2>Gestión de Rutas</h2>
+    <div class="card">
+      <h3 style="margin-bottom:14px;font-size:.95rem;color:var(--muted)">Registrar nueva ruta</h3>
+      <div class="card-row">
+        <input id="r-name"    type="text"   placeholder="Nombre (ej: Microservicio Usuarios)" />
+        <input id="r-pattern" type="text"   placeholder="Patrón (ej: usuarios)" />
+        <input id="r-url"     type="text"   placeholder="URL destino (ej: http://localhost:8085)" />
+        <input id="r-limit"   type="number" placeholder="Rate limit/min" value="60" min="1" style="max-width:140px" />
+        <button class="btn btn-primary" onclick="crearRuta()">+ Agregar Ruta</button>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Nombre</th><th>Patrón</th><th>URL Destino</th><th>Rate Limit</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="rutas-body"><tr><td colspan="6" style="color:var(--muted);text-align:center">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════ API KEYS ══════════ -->
+  <section id="keys" class="section">
+    <h2>Gestión de API Keys</h2>
+    <div class="card">
+      <h3 style="margin-bottom:14px;font-size:.95rem;color:var(--muted)">Nueva API Key</h3>
+      <div class="card-row">
+        <input id="k-owner" type="text"   placeholder="Nombre del propietario/cliente" />
+        <input id="k-limit" type="number" placeholder="Rate limit/min" value="100" min="1" style="max-width:140px" />
+        <input id="k-key"   type="text"   placeholder="Clave personalizada (opcional)" />
+        <button class="btn btn-primary" onclick="crearKey()">+ Crear Key</button>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>ID</th><th>Propietario</th><th>Clave</th><th>Rate Limit</th><th>Estado</th><th>Creada</th><th>Acciones</th></tr></thead>
+        <tbody id="keys-body"><tr><td colspan="7" style="color:var(--muted);text-align:center">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════ LOGS ══════════ -->
+  <section id="logs" class="section">
+    <h2>Logs de Acceso (últimos 100)</h2>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <button class="btn btn-primary btn-sm" onclick="cargarLogs()">⟳ Actualizar</button>
+      <select id="log-filtro" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.85rem" onchange="filtrarLogs()">
+        <option value="">Todas las rutas</option>
+        <option value="usuarios">usuarios</option>
+        <option value="comics">comics</option>
+        <option value="ventas">ventas</option>
+      </select>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Timestamp</th><th>Método</th><th>Ruta</th><th>Destino</th><th>Status</th><th>Tiempo (ms)</th><th>IP</th><th>API Key</th></tr></thead>
+        <tbody id="logs-body"><tr><td colspan="8" style="color:var(--muted);text-align:center">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+<div id="toast"></div>
+
+<script>
+  const BASE = '';
+
+  // ── Tab navigation ──
+  function showTab(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+    if (id === 'dashboard') cargarDashboard();
+    if (id === 'rutas')     cargarRutas();
+    if (id === 'keys')      cargarKeys();
+    if (id === 'logs')      cargarLogs();
+  }
+
+  // ── Toast ──
+  function toast(msg, ok = true) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.background = ok ? 'var(--success)' : 'var(--danger)';
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 3000);
+  }
+
+  // ── Helpers ──
+  async function api(path, opts = {}) {
+    const res = await fetch(BASE + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+    if (!res.ok) throw new Error(await res.text());
+    if (res.status === 204) return null;
+    return res.json();
+  }
+
+  function formatDate(str) {
+    if (!str) return '—';
+    return new Date(str).toLocaleString('es-CL');
+  }
+
+  function statusColor(code) {
+    if (code >= 200 && code < 300) return 'log-200';
+    if (code >= 400 && code < 500) return 'log-4xx';
+    return 'log-5xx';
+  }
+
+  // ════ DASHBOARD ════
+  async function cargarDashboard() {
+    try {
+      const [rutas, keys, logs] = await Promise.all([
+        api('/api/v1/routes'),
+        api('/api/v1/keys'),
+        api('/api/v1/logs')
+      ]);
+      document.getElementById('stat-rutas').textContent = rutas.length;
+      document.getElementById('stat-rutas-activas').textContent = rutas.filter(r => r.enabled).length;
+      document.getElementById('stat-keys').textContent = keys.length;
+      document.getElementById('stat-logs').textContent = logs.length;
+
+      const tbody = document.getElementById('dash-rutas-body');
+      tbody.innerHTML = rutas.map(r => `
+        <tr>
+          <td>${r.name}</td>
+          <td><code class="key-code">${r.pathPattern}</code></td>
+          <td style="color:var(--muted)">${r.targetUrl}</td>
+          <td>${r.rateLimitPerMinute}/min</td>
+          <td><span class="badge ${r.enabled ? 'badge-green' : 'badge-red'}">${r.enabled ? 'Activa' : 'Inactiva'}</span></td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      toast('Error cargando dashboard: ' + e.message, false);
+    }
+  }
+
+  // ════ RUTAS ════
+  async function cargarRutas() {
+    try {
+      const rutas = await api('/api/v1/routes');
+      const tbody = document.getElementById('rutas-body');
+      if (rutas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center">Sin rutas registradas</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rutas.map(r => `
+        <tr>
+          <td>${r.name}</td>
+          <td><code class="key-code">${r.pathPattern}</code></td>
+          <td style="color:var(--muted);font-size:.82rem">${r.targetUrl}</td>
+          <td>${r.rateLimitPerMinute}/min</td>
+          <td><span class="badge ${r.enabled ? 'badge-green' : 'badge-red'}">${r.enabled ? 'Activa' : 'Inactiva'}</span></td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-warning btn-sm" onclick="toggleRuta(${r.id})">${r.enabled ? 'Deshabilitar' : 'Habilitar'}</button>
+            <button class="btn btn-danger btn-sm"  onclick="eliminarRuta(${r.id})">Eliminar</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      toast('Error cargando rutas: ' + e.message, false);
+    }
+  }
+
+  async function crearRuta() {
+    const name       = document.getElementById('r-name').value.trim();
+    const pathPattern= document.getElementById('r-pattern').value.trim();
+    const targetUrl  = document.getElementById('r-url').value.trim();
+    const rateLimitPerMinute = parseInt(document.getElementById('r-limit').value) || 60;
+    if (!name || !pathPattern || !targetUrl) return toast('Completa todos los campos obligatorios', false);
+    try {
+      await api('/api/v1/routes', { method: 'POST', body: JSON.stringify({ name, pathPattern, targetUrl, enabled: true, rateLimitPerMinute }) });
+      toast('Ruta registrada exitosamente');
+      ['r-name','r-pattern','r-url'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('r-limit').value = '60';
+      cargarRutas();
+    } catch (e) { toast('Error al crear ruta: ' + e.message, false); }
+  }
+
+  async function toggleRuta(id) {
+    try {
+      await api(`/api/v1/routes/${id}/toggle`, { method: 'PATCH' });
+      toast('Estado de ruta actualizado');
+      cargarRutas();
+    } catch (e) { toast('Error: ' + e.message, false); }
+  }
+
+  async function eliminarRuta(id) {
+    if (!confirm('¿Eliminar esta ruta?')) return;
+    try {
+      await api(`/api/v1/routes/${id}`, { method: 'DELETE' });
+      toast('Ruta eliminada');
+      cargarRutas();
+    } catch (e) { toast('Error: ' + e.message, false); }
+  }
+
+  // ════ API KEYS ════
+  async function cargarKeys() {
+    try {
+      const keys = await api('/api/v1/keys');
+      const tbody = document.getElementById('keys-body');
+      if (keys.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center">Sin API Keys registradas</td></tr>';
+        return;
+      }
+      tbody.innerHTML = keys.map(k => `
+        <tr>
+          <td>${k.id}</td>
+          <td>${k.ownerName}</td>
+          <td><code class="key-code">${k.keyString}</code></td>
+          <td>${k.rateLimitPerMinute}/min</td>
+          <td><span class="badge ${k.active ? 'badge-green' : 'badge-red'}">${k.active ? 'Activa' : 'Inactiva'}</span></td>
+          <td style="color:var(--muted);font-size:.82rem">${formatDate(k.createdAt)}</td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-warning btn-sm" onclick="toggleKey(${k.id})">${k.active ? 'Desactivar' : 'Activar'}</button>
+            <button class="btn btn-danger btn-sm"  onclick="eliminarKey(${k.id})">Eliminar</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) { toast('Error cargando keys: ' + e.message, false); }
+  }
+
+  async function crearKey() {
+    const ownerName         = document.getElementById('k-owner').value.trim();
+    const rateLimitPerMinute= parseInt(document.getElementById('k-limit').value) || 100;
+    const keyString         = document.getElementById('k-key').value.trim();
+    if (!ownerName) return toast('Ingresa el nombre del propietario', false);
+    try {
+      await api('/api/v1/keys', { method: 'POST', body: JSON.stringify({ ownerName, rateLimitPerMinute, keyString: keyString || null, active: true }) });
+      toast('API Key creada exitosamente');
+      ['k-owner','k-key'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('k-limit').value = '100';
+      cargarKeys();
+    } catch (e) { toast('Error al crear key: ' + e.message, false); }
+  }
+
+  async function toggleKey(id) {
+    try {
+      await api(`/api/v1/keys/${id}/toggle`, { method: 'PATCH' });
+      toast('Estado de API Key actualizado');
+      cargarKeys();
+    } catch (e) { toast('Error: ' + e.message, false); }
+  }
+
+  async function eliminarKey(id) {
+    if (!confirm('¿Eliminar esta API Key?')) return;
+    try {
+      await api(`/api/v1/keys/${id}`, { method: 'DELETE' });
+      toast('API Key eliminada');
+      cargarKeys();
+    } catch (e) { toast('Error: ' + e.message, false); }
+  }
+
+  // ════ LOGS ════
+  async function cargarLogs() {
+    try {
+      const logs = await api('/api/v1/logs');
+      renderLogs(logs);
+    } catch (e) { toast('Error cargando logs: ' + e.message, false); }
+  }
+
+  async function filtrarLogs() {
+    const patron = document.getElementById('log-filtro').value;
+    try {
+      const logs = patron
+        ? await api(`/api/v1/logs/ruta/${patron}`)
+        : await api('/api/v1/logs');
+      renderLogs(logs);
+    } catch (e) { toast('Error filtrando logs: ' + e.message, false); }
+  }
+
+  function renderLogs(logs) {
+    const tbody = document.getElementById('logs-body');
+    if (logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center">Sin logs registrados</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.map(l => `
+      <tr>
+        <td style="font-size:.78rem;color:var(--muted)">${formatDate(l.timestamp)}</td>
+        <td><span class="log-method badge badge-blue">${l.httpMethod}</span></td>
+        <td style="font-size:.82rem">${l.requestPath}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${l.targetUrl}</td>
+        <td><span class="log-method ${statusColor(l.responseStatus)}">${l.responseStatus}</span></td>
+        <td style="color:var(--muted)">${l.executionTimeMs} ms</td>
+        <td style="font-size:.78rem;color:var(--muted)">${l.clientIp}</td>
+        <td style="font-size:.78rem"><code class="key-code">${l.apiKeyUsed || '—'}</code></td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Init ──
+  cargarDashboard();
+</script>
+</body>
+</html>
