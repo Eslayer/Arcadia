@@ -75,7 +75,7 @@ export default function App() {
 
   if (!authorized) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: '#fff' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#ffffff', color: '#0f172a' }}>
         <p>Verificando credenciales de Administrador...</p>
       </div>
     );

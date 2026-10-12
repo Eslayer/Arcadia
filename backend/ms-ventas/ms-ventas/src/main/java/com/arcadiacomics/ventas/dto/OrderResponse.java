@@ -14,6 +14,11 @@ public class OrderResponse {
     private OrderStatus status;
     private List<OrderItemDTO> items;
     private LocalDateTime createdAt;
+    private String buyOrder;
+    private String webpayToken;
+    private String webpayUrl;
+    private String authorizationCode;
+    private String cardLastDigits;
 
     public OrderResponse() {
     }
@@ -23,6 +28,10 @@ public class OrderResponse {
         this.userId = order.getUserId();
         this.totalAmount = order.getTotalAmount();
         this.status = order.getStatus();
+        this.buyOrder = order.getBuyOrder();
+        this.webpayToken = order.getWebpayToken();
+        this.authorizationCode = order.getAuthorizationCode();
+        this.cardLastDigits = order.getCardLastDigits();
         if (order.getItems() != null) {
             this.items = order.getItems().stream().map(item -> {
                 OrderItemDTO dto = new OrderItemDTO();
@@ -80,5 +89,45 @@ public class OrderResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getBuyOrder() {
+        return buyOrder;
+    }
+
+    public void setBuyOrder(String buyOrder) {
+        this.buyOrder = buyOrder;
+    }
+
+    public String getWebpayToken() {
+        return webpayToken;
+    }
+
+    public void setWebpayToken(String webpayToken) {
+        this.webpayToken = webpayToken;
+    }
+
+    public String getWebpayUrl() {
+        return webpayUrl;
+    }
+
+    public void setWebpayUrl(String webpayUrl) {
+        this.webpayUrl = webpayUrl;
+    }
+
+    public String getAuthorizationCode() {
+        return authorizationCode;
+    }
+
+    public void setAuthorizationCode(String authorizationCode) {
+        this.authorizationCode = authorizationCode;
+    }
+
+    public String getCardLastDigits() {
+        return cardLastDigits;
+    }
+
+    public void setCardLastDigits(String cardLastDigits) {
+        this.cardLastDigits = cardLastDigits;
     }
 }

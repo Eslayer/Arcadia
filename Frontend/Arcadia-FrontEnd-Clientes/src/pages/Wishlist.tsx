@@ -37,23 +37,23 @@ const Wishlist: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Banner de Lista de Deseos & Alertas de Ofertas */}
-      <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-primary-700 rounded-2xl p-6 sm:p-8 text-white shadow-lg mb-8 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-primary-50 via-white to-primary-100/60 rounded-2xl p-6 sm:p-8 border border-primary-200/70 shadow-sm mb-8 relative overflow-hidden">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+          <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 border border-primary-200 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-primary-600" />
             <span>{lang === 'es' ? 'Alertas de Ofertas & Descuentos' : 'Deal Alerts & Discounts'}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">{t('myWishlist')}</h1>
-          <p className="text-sm sm:text-base text-amber-100 leading-relaxed mb-4">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2 font-heading">{t('myWishlist')}</h1>
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-4">
             {lang === 'es'
               ? 'Guarda los cómics que quieres comprar más adelante. Puedes activar alertas para que te notifiquemos si bajan de precio o entran en oferta especial.'
               : 'Save comics you want to buy later. You can activate alerts so we notify you if their price drops or they enter a special deal.'}
           </p>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-white/90">
-            <span className="bg-black/20 px-2.5 py-1 rounded-lg">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-700">
+            <span className="bg-white border border-primary-100 px-2.5 py-1 rounded-lg font-medium shadow-sm">
               📦 {wishlist.length} {wishlist.length === 1 ? (lang === 'es' ? 'cómic guardado' : 'item saved') : (lang === 'es' ? 'cómics guardados' : 'items saved')}
             </span>
-            <span className="bg-black/20 px-2.5 py-1 rounded-lg">
+            <span className="bg-white border border-primary-100 px-2.5 py-1 rounded-lg font-medium shadow-sm">
               🔔 Notificaciones de precio activas
             </span>
           </div>
@@ -100,8 +100,7 @@ const Wishlist: React.FC = () => {
               key={comic.id}
               className="card overflow-hidden group flex flex-col justify-between hover:shadow-lg transition-all border border-gray-100 bg-white"
             >
-              {/* Cover Image Container (Dark background to prevent white flashes) */}
-              <div className="relative h-64 overflow-hidden bg-slate-900">
+              <div className="relative h-64 overflow-hidden bg-primary-50">
                 <ComicCover
                   src={comic.coverImage}
                   alt={comic.title}

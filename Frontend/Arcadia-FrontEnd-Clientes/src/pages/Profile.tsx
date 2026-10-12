@@ -134,7 +134,7 @@ const Profile: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
           {/* Avatar with initial or image */}
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-primary-600 via-primary-500 to-indigo-500 flex items-center justify-center text-white text-3xl font-black shadow-lg ring-4 ring-primary-50">
+            <div className="w-24 h-24 rounded-full bg-primary-600 flex items-center justify-center text-white text-3xl font-black shadow-lg ring-4 ring-primary-50 font-heading">
               {displayInitial}
             </div>
             <span className="absolute bottom-0 right-0 w-6 h-6 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-white text-[10px]" title="En línea">

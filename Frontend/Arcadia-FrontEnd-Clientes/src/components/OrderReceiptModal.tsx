@@ -28,6 +28,7 @@ export interface ReceiptData {
   tax: number;
   total: number;
   last4Digits: string;
+  authorizationCode?: string;
 }
 
 interface OrderReceiptModalProps {
@@ -60,7 +61,7 @@ const OrderReceiptModal: React.FC<OrderReceiptModalProps> = ({ receipt, onClose 
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200 print:bg-white print:p-0 print:static">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200 print:bg-white print:p-0 print:static">
       <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-gray-100 overflow-hidden my-8 print:shadow-none print:border-none print:m-0 print:w-full print:max-w-none">
         {/* Modal Top Bar (Hidden in print) */}
         <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between print:hidden">
@@ -115,8 +116,13 @@ const OrderReceiptModal: React.FC<OrderReceiptModalProps> = ({ receipt, onClose 
               <p className="font-bold text-gray-800">{receipt.customerName}</p>
               <p className="text-gray-600">{receipt.customerEmail}</p>
               <p className="text-gray-500 mt-1">
-                {lang === 'es' ? 'Pago con tarjeta' : 'Paid with card'}: •••• {receipt.last4Digits}
+                {lang === 'es' ? 'Método' : 'Method'}: WebPay Plus {receipt.last4Digits ? `(•••• ${receipt.last4Digits})` : ''}
               </p>
+              {receipt.authorizationCode && (
+                <p className="text-emerald-700 font-mono text-[11px] mt-0.5">
+                  {lang === 'es' ? 'Cód. Autorización' : 'Auth Code'}: {receipt.authorizationCode}
+                </p>
+              )}
             </div>
             <div>
               <p className="text-gray-400 font-semibold uppercase tracking-wider text-[11px] mb-1">

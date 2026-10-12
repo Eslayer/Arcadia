@@ -50,11 +50,11 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-primary-600 flex items-center justify-center text-white font-black text-xl shadow-sm shadow-primary-500/20 font-heading">
               A
             </div>
-            <div className="text-xl sm:text-2xl font-black text-primary-600 tracking-tight">
-              Arcadia <span className="text-gray-900 font-bold">Comics</span>
+            <div className="text-xl sm:text-2xl font-black text-primary-600 tracking-tight font-heading">
+              Arcadia <span className="text-slate-900 font-bold">Comics</span>
             </div>
           </Link>
 
@@ -122,7 +122,7 @@ const Header = () => {
                 title={t('profileTitle')}
               >
                 {user ? (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                     {displayInitial}
                   </div>
                 ) : (

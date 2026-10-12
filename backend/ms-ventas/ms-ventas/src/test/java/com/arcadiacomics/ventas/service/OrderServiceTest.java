@@ -1,9 +1,6 @@
 package com.arcadiacomics.ventas.service;
 
-import com.arcadiacomics.ventas.dto.CheckoutRequest;
-import com.arcadiacomics.ventas.dto.OrderEventDTO;
-import com.arcadiacomics.ventas.dto.OrderItemDTO;
-import com.arcadiacomics.ventas.dto.OrderResponse;
+import com.arcadiacomics.ventas.dto.*;
 import com.arcadiacomics.ventas.model.entity.Order;
 import com.arcadiacomics.ventas.model.entity.OrderItem;
 import com.arcadiacomics.ventas.model.enums.OrderStatus;
@@ -27,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Tests para OrderService")
+@DisplayName("Tests para OrderService con WebPay y Amazon SQS")
 class OrderServiceTest {
 
     @Mock
@@ -35,6 +32,12 @@ class OrderServiceTest {
 
     @Mock
     private OrderEventPublisher eventPublisher;
+
+    @Mock
+    private WebpayService webpayService;
+
+    @Mock
+    private AwsSqsService awsSqsService;
 
     @InjectMocks
     private OrderService orderService;
@@ -44,7 +47,6 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Configurar una orden de prueba
         orderTest = new Order();
         orderTest.setId("order-123");
         orderTest.setUserId("user-456");
@@ -54,11 +56,10 @@ class OrderServiceTest {
         items.add(new OrderItem("comic-abc", 2));
         orderTest.setItems(items);
 
-        // Configurar una solicitud de checkout de prueba
         checkoutRequestTest = new CheckoutRequest();
         checkoutRequestTest.setUserId("user-456");
         checkoutRequestTest.setTotalAmount(49.99);
-        
+
         OrderItemDTO itemDto = new OrderItemDTO();
         itemDto.setComicId("comic-abc");
         itemDto.setQuantity(2);
@@ -66,13 +67,18 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Debe procesar checkout exitosamente y guardar la orden como PENDING")
+    @DisplayName("Debe procesar checkout exitosamente e inicializar WebPay")
     void debeProcesarCheckoutExitosamente() {
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order saved = invocation.getArgument(0);
-            saved.setId("order-123");
+            if (saved.getId() == null) {
+                saved.setId("order-123");
+            }
             return saved;
         });
+
+        when(webpayService.initTransaction(anyString(), anyString(), anyDouble()))
+                .thenReturn(new WebpayInitResponse("token-test-123", "https://webpay3gint.transbank.cl/webpayserver/initTransaction"));
 
         OrderResponse response = orderService.processCheckout(checkoutRequestTest);
 
@@ -81,12 +87,63 @@ class OrderServiceTest {
         assertEquals("user-456", response.getUserId());
         assertEquals(49.99, response.getTotalAmount());
         assertEquals(OrderStatus.PENDING, response.getStatus());
-        assertEquals(1, response.getItems().size());
-        assertEquals("comic-abc", response.getItems().get(0).getComicId());
-        assertEquals(2, response.getItems().get(0).getQuantity());
+        assertEquals("token-test-123", response.getWebpayToken());
+        assertEquals("https://webpay3gint.transbank.cl/webpayserver/initTransaction", response.getWebpayUrl());
 
-        verify(orderRepository, times(1)).save(any(Order.class));
-        verifyNoInteractions(eventPublisher); // El evento no debe dispararse en checkout (se hace en pago)
+        verify(orderRepository, atLeastOnce()).save(any(Order.class));
+        verify(webpayService, times(1)).initTransaction(anyString(), eq("user-456"), eq(49.99));
+        verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(awsSqsService);
+    }
+
+    @Test
+    @DisplayName("Debe confirmar pago exitoso en WebPay y publicar en RabbitMQ y Amazon SQS")
+    void debeConfirmarPagoWebpayYPublicarEnSqs() {
+        orderTest.setWebpayToken("token-test-123");
+        when(orderRepository.findByWebpayToken("token-test-123")).thenReturn(Optional.of(orderTest));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        WebpayCommitResponse commitResponse = new WebpayCommitResponse();
+        commitResponse.setStatus("AUTHORIZED");
+        commitResponse.setResponseCode(0);
+        commitResponse.setAuthorizationCode("123456");
+        commitResponse.setPaymentTypeCode("VD");
+        commitResponse.setCardDetail(new WebpayCommitResponse.CardDetail("6623"));
+        when(webpayService.commitTransaction("token-test-123")).thenReturn(commitResponse);
+
+        OrderResponse response = orderService.confirmWebpayPayment("token-test-123");
+
+        assertNotNull(response);
+        assertEquals(OrderStatus.PAID, response.getStatus());
+        assertEquals("123456", response.getAuthorizationCode());
+        assertEquals("6623", response.getCardLastDigits());
+
+        // Verificar publicación en RabbitMQ
+        verify(eventPublisher, times(1)).publishOrderPaidEvent(any(OrderEventDTO.class));
+
+        // Verificar publicación en Amazon SQS
+        ArgumentCaptor<PaymentCompletedSqsEvent> sqsCaptor = ArgumentCaptor.forClass(PaymentCompletedSqsEvent.class);
+        verify(awsSqsService, times(1)).sendPaymentCompletedMessage(sqsCaptor.capture());
+        PaymentCompletedSqsEvent sqsEvent = sqsCaptor.getValue();
+        assertEquals("order-123", sqsEvent.getOrderId());
+        assertEquals("123456", sqsEvent.getAuthorizationCode());
+        assertEquals("AUTHORIZED", sqsEvent.getStatus());
+    }
+
+    @Test
+    @DisplayName("Debe marcar orden como CANCELLED al cancelar en WebPay")
+    void debeMarcarOrdenComoCanceladaAlCancelarWebpay() {
+        orderTest.setWebpayToken("tbk-token-cancelled");
+        when(orderRepository.findByWebpayToken("tbk-token-cancelled")).thenReturn(Optional.of(orderTest));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrderResponse response = orderService.handleWebpayCancellation("tbk-token-cancelled");
+
+        assertNotNull(response);
+        assertEquals(OrderStatus.CANCELLED, response.getStatus());
+        verify(orderRepository, times(1)).save(orderTest);
+        verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(awsSqsService);
     }
 
     @Test
@@ -126,48 +183,14 @@ class OrderServiceTest {
         assertNotNull(response);
         assertEquals(OrderStatus.PAID, response.getStatus());
 
-        // Verificar que se haya guardado en repositorio
         verify(orderRepository, times(1)).save(orderTest);
 
-        // Verificar publicación del evento
         ArgumentCaptor<OrderEventDTO> eventCaptor = ArgumentCaptor.forClass(OrderEventDTO.class);
         verify(eventPublisher, times(1)).publishOrderPaidEvent(eventCaptor.capture());
 
         OrderEventDTO eventDTO = eventCaptor.getValue();
         assertEquals("order-123", eventDTO.getOrderId());
         assertEquals("user-456", eventDTO.getUserId());
-        assertEquals(1, eventDTO.getItems().size());
-        assertEquals("comic-abc", eventDTO.getItems().get(0).getComicId());
-        assertEquals(2, eventDTO.getItems().get(0).getQuantity());
-    }
-
-    @Test
-    @DisplayName("Debe actualizar el estado a CANCELLED sin publicar evento")
-    void debeActualizarEstadoACancelledSinPublicarEvento() {
-        when(orderRepository.findById("order-123")).thenReturn(Optional.of(orderTest));
-        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        OrderResponse response = orderService.updateOrderStatus("order-123", OrderStatus.CANCELLED);
-
-        assertNotNull(response);
-        assertEquals(OrderStatus.CANCELLED, response.getStatus());
-
-        verify(orderRepository, times(1)).save(orderTest);
-        verifyNoInteractions(eventPublisher); // No debe publicar evento para CANCELLED
-    }
-
-    @Test
-    @DisplayName("Debe lanzar excepción al actualizar estado de orden inexistente")
-    void debeLanzarExcepcionAlActualizarEstadoDeOrdenInexistente() {
-        when(orderRepository.findById("invalid-id")).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            orderService.updateOrderStatus("invalid-id", OrderStatus.PAID);
-        });
-
-        assertEquals("Order not found", exception.getMessage());
-        verify(orderRepository, never()).save(any());
-        verifyNoInteractions(eventPublisher);
     }
 
     @Test

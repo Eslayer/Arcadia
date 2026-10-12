@@ -19,16 +19,23 @@ services:
       retries: 5
 
   rabbitmq:
-    image: rabbitmq:3-management
-    container_name: arcadia-rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    ports:
-      - "5672:5672" # Puerto para comunicación AMQP
-      - "15672:15672" # Puerto para el panel de administración
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
+    rabbitmq:
+      image: rabbitmq:4.2-management
+      container_name: rabbitmq
+      ports:
+        - "5672:5672" # AMQP Protocol Port
+        - "15672:15672" # Management UI Port
+      environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASS: guest
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
+      healthcheck:
+        test: ["CMD", "rabbitmq-diagnostics", "ping"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
 
 volumes:
   mysql-data:

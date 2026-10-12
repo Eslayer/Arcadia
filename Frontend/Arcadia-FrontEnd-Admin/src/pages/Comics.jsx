@@ -284,9 +284,9 @@ const Comics = () => {
                       width: '100%',
                       padding: '0.6rem 0.8rem',
                       borderRadius: '0.5rem',
-                      border: '1px solid #334155',
-                      background: '#0f172a',
-                      color: '#f8fafc'
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      color: '#0f172a'
                     }}
                     required
                   >
@@ -323,9 +323,9 @@ const Comics = () => {
                       width: '100%',
                       padding: '0.6rem 0.8rem',
                       borderRadius: '0.5rem',
-                      border: '1px solid #334155',
-                      background: '#0f172a',
-                      color: '#f8fafc'
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      color: '#0f172a'
                     }}
                     required
                   >
@@ -357,9 +357,9 @@ const Comics = () => {
                     width: '100%',
                     padding: '0.6rem 0.8rem',
                     borderRadius: '0.5rem',
-                    border: '1px solid #334155',
-                    background: '#0f172a',
-                    color: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    color: '#0f172a',
                     fontFamily: 'inherit',
                     resize: 'vertical'
                   }}

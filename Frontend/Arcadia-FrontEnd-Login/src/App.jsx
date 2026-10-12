@@ -194,6 +194,9 @@ function App() {
       </button>
       <div className="glass-card">
         <div className="login-header">
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', fontWeight: 900, fontSize: '1.5rem', marginBottom: '0.75rem', boxShadow: '0 2px 8px rgba(37, 99, 235, 0.1)' }}>
+            A
+          </div>
           <h1>Arcadia Admin</h1>
           <p>Ingresa tus credenciales para continuar</p>
         </div>
@@ -249,10 +252,10 @@ function App() {
           </button>
         </form>
 
-        <div style={{ display: 'flex', alignItems: 'center', margin: '1rem 0', color: 'var(--text-muted, #94a3b8)' }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.15)' }}></div>
+        <div style={{ display: 'flex', alignItems: 'center', margin: '1rem 0', color: 'var(--text-muted, #64748b)' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
           <span style={{ padding: '0 0.75rem', fontSize: '0.85rem' }}>o continuar con</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.15)' }}></div>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
         </div>
 
         <button
@@ -270,13 +273,13 @@ function App() {
             padding: '0.75rem 1rem',
             backgroundColor: '#ffffff',
             color: '#1f2937',
-            border: 'none',
+            border: '1px solid #e2e8f0',
             borderRadius: '0.5rem',
             fontWeight: '600',
             fontSize: '0.9rem',
             cursor: 'pointer',
             marginBottom: '1rem',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24">
@@ -305,7 +308,7 @@ function App() {
             style={{
               background: 'none',
               border: 'none',
-              color: '#818cf8',
+              color: '#3b82f6',
               cursor: 'pointer',
               marginLeft: '0.5rem'
             }}

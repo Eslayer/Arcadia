@@ -21,17 +21,9 @@ public class CheckoutRequest {
     @Valid
     private List<OrderItemDTO> items;
 
-    // Simulated Credit Card Details (Will not be persisted)
-    @NotBlank(message = "El número de tarjeta es obligatorio")
-    @Pattern(regexp = "\\d{16}", message = "El número de tarjeta debe tener 16 dígitos")
+    // Simulated Credit Card Details (Opcional, en caso de pago directo simulado o nulos si se usa WebPay)
     private String cardNumber;
-
-    @NotBlank(message = "La fecha de expiración es obligatoria")
-    @Pattern(regexp = "(0[1-9]|1[0-2])/\\d{2}", message = "La fecha de expiración debe tener el formato MM/YY")
     private String expirationDate;
-
-    @NotBlank(message = "El código de seguridad (CCV) es obligatorio")
-    @Pattern(regexp = "\\d{3}", message = "El CCV debe tener exactamente 3 dígitos")
     private String ccv;
 
     public CheckoutRequest() {

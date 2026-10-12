@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, Lock, X } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import { useLanguage } from '../context/LanguageContext'
+import { useToast } from '../context/ToastContext'
 import ComicCover from '../components/ComicCover'
 import CheckoutModal from '../components/CheckoutModal'
 import OrderReceiptModal, { ReceiptData } from '../components/OrderReceiptModal'
@@ -10,6 +11,7 @@ import OrderReceiptModal, { ReceiptData } from '../components/OrderReceiptModal'
 const Cart = () => {
   const { items, total, updateQuantity, removeFromCart, clearCart } = useCart()
   const { t, lang } = useLanguage()
+  const { showToast } = useToast()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [completedReceipt, setCompletedReceipt] = useState<ReceiptData | null>(null)
@@ -17,6 +19,87 @@ const Cart = () => {
   const shipping = total >= 50 ? 0 : 5.99
   const tax = total * 0.08
   const finalTotal = total + shipping + tax
+
+  // Detectar retorno desde la pasarela WebPay Plus
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const payment = params.get('payment')
+
+    if (payment === 'success') {
+      const orderId = params.get('orderId') || `ORD-${Date.now().toString().substring(6)}`
+      const authCode = params.get('authCode') || ''
+      const amountParam = params.get('amount')
+      const paidTotal = amountParam ? parseFloat(amountParam) : finalTotal
+
+      // Recuperar los datos del carrito/despacho guardados antes de la redirección
+      const pendingRaw = localStorage.getItem('arcadia_pending_checkout')
+      let pendingData: any = null
+      if (pendingRaw) {
+        try {
+          pendingData = JSON.parse(pendingRaw)
+        } catch (e) {
+          console.error('Error parseando pending checkout', e)
+        }
+      }
+
+      const receipt: ReceiptData = {
+        orderId,
+        createdAt: new Date().toISOString(),
+        status: 'APPROVED',
+        customerName: pendingData?.customerName || 'Cliente Arcadia',
+        customerEmail: pendingData?.customerEmail || 'cliente@arcadiacomics.com',
+        shippingAddress: pendingData?.shippingAddress || {
+          address: 'Av. Providencia 1234, Depto 402',
+          city: 'Santiago, Región Metropolitana',
+          phone: '+56 9 8765 4321',
+        },
+        items: pendingData?.items || items,
+        subtotal: pendingData?.subtotal || total,
+        shipping: pendingData?.shipping ?? shipping,
+        tax: pendingData?.tax ?? tax,
+        total: paidTotal || pendingData?.total || finalTotal,
+        last4Digits: '6623',
+        authorizationCode: authCode,
+      }
+
+      clearCart()
+      localStorage.removeItem('arcadia_pending_checkout')
+      setCompletedReceipt(receipt)
+
+      showToast(
+        lang === 'es'
+          ? '¡Pago aprobado en WebPay Plus! Evento registrado y cola despachada a Amazon SQS.'
+          : 'Payment approved on WebPay Plus! Event logged and sent to Amazon SQS.',
+        'success',
+        {
+          title: lang === 'es' ? 'Transbank WebPay Plus' : 'Transbank WebPay Plus',
+          iconType: 'order',
+        }
+      )
+
+      window.history.replaceState({}, document.title, window.location.pathname)
+    } else if (payment === 'cancelled') {
+      showToast(
+        lang === 'es'
+          ? 'La compra fue cancelada en el portal de Transbank WebPay.'
+          : 'Payment was cancelled on Transbank WebPay.',
+        'warning'
+      )
+      window.history.replaceState({}, document.title, window.location.pathname)
+    } else if (payment === 'rejected') {
+      showToast(
+        lang === 'es'
+          ? 'El pago fue rechazado por WebPay. Por favor intenta nuevamente.'
+          : 'Payment was rejected by WebPay. Please try again.',
+        'error'
+      )
+      window.history.replaceState({}, document.title, window.location.pathname)
+    } else if (payment === 'error') {
+      const msg = params.get('message') || 'Error al procesar el pago'
+      showToast(msg, 'error')
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [lang, showToast, clearCart, total, finalTotal, shipping, tax, items])
 
   const handleProceedToCheckout = () => {
     const token = localStorage.getItem('token')
@@ -222,16 +305,16 @@ const Cart = () => {
 
       {/* Modal: Iniciar Sesión Obligatorio para Comprar */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
             <button
               onClick={() => setShowLoginModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-200">
+            <div className="w-14 h-14 bg-primary-50 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary-200">
               <Lock className="w-7 h-7" />
             </div>
 

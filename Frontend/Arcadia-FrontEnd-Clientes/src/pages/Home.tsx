@@ -20,8 +20,7 @@ interface ComicItemProps {
 const ComicCard = memo(({ comic, isFav, onToggleFav, onAddToCart, t }: ComicItemProps) => {
   return (
     <div className="card overflow-hidden group flex flex-col justify-between hover:shadow-md transition-shadow bg-white">
-      {/* Fondo oscuro para evitar destello blanco durante carga de imagen */}
-      <div className="relative h-64 overflow-hidden bg-slate-900">
+      <div className="relative h-64 overflow-hidden bg-primary-50">
         <ComicCover
           src={comic.coverImage}
           alt={comic.title}
@@ -56,7 +55,7 @@ const ComicCard = memo(({ comic, isFav, onToggleFav, onAddToCart, t }: ComicItem
         <div>
           <div className="flex items-center justify-between mb-3">
             <span className="text-2xl font-bold text-primary-600">${comic.price}</span>
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded font-medium">{comic.genre}</span>
+            <span className="text-xs bg-primary-50 text-primary-700 border border-primary-100 px-2 py-0.5 rounded-full font-medium">{comic.genre}</span>
           </div>
           <div className="flex gap-2">
             <Link
@@ -82,7 +81,7 @@ const ComicCard = memo(({ comic, isFav, onToggleFav, onAddToCart, t }: ComicItem
 const ComicListItem = memo(({ comic, isFav, onToggleFav, onAddToCart, t }: ComicItemProps) => {
   return (
     <div className="card p-4 flex gap-4 hover:shadow-md transition-shadow bg-white">
-      <div className="relative w-24 h-32 flex-shrink-0 overflow-hidden rounded bg-slate-900">
+      <div className="relative w-24 h-32 flex-shrink-0 overflow-hidden rounded bg-primary-50">
         <ComicCover
           src={comic.coverImage}
           alt={comic.title}
@@ -115,7 +114,7 @@ const ComicListItem = memo(({ comic, isFav, onToggleFav, onAddToCart, t }: Comic
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl font-bold text-primary-600">${comic.price}</span>
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded font-medium">{comic.genre}</span>
+            <span className="text-xs bg-primary-50 text-primary-700 border border-primary-100 px-2 py-0.5 rounded-full font-medium">{comic.genre}</span>
           </div>
           <div className="flex gap-2">
             <Link
@@ -224,27 +223,34 @@ const Home = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-8 mb-8 text-white shadow-lg">
-        <h1 className="text-4xl font-bold mb-4">{t('welcomeTitle')}</h1>
-        <p className="text-xl mb-6 text-primary-100 max-w-2xl">
-          {t('welcomeSubtitle')}
-        </p>
-        <a 
-          href="#catalog-section"
-          className="inline-block bg-white text-primary-600 px-6 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors shadow-sm"
-        >
-          {t('shopNow')}
-        </a>
+      <div className="bg-gradient-to-br from-primary-50 via-white to-primary-100/60 rounded-2xl p-8 sm:p-10 mb-8 border border-primary-200/70 shadow-sm relative overflow-hidden">
+        <div className="max-w-2xl relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-100/80 text-primary-700 text-xs font-semibold mb-3 border border-primary-200">
+            <span>✨ Tienda Oficial Arcadia Cómics</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-3 tracking-tight">
+            {t('welcomeTitle')}
+          </h1>
+          <p className="text-base sm:text-lg text-slate-600 mb-6 leading-relaxed">
+            {t('welcomeSubtitle')}
+          </p>
+          <a 
+            href="#catalog-section"
+            className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-sm hover:shadow"
+          >
+            {t('shopNow')}
+          </a>
+        </div>
       </div>
 
       {/* Filters and Controls */}
-      <div id="catalog-section" className="bg-white rounded-lg shadow-sm p-4 mb-6 border border-gray-100">
+      <div id="catalog-section" className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-slate-200">
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
           <div className="flex flex-wrap gap-2">
             <select
               value={selectedGenre}
               onChange={(e) => setSelectedGenre(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-slate-800 text-sm"
             >
               {genres.map(genre => (
                 <option key={genre} value={genre}>
@@ -256,7 +262,7 @@ const Home = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-slate-800 text-sm"
             >
               <option value="title">{t('sortByTitle')}</option>
               <option value="price-low">{t('sortPriceLow')}</option>
@@ -268,14 +274,14 @@ const Home = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-primary-100 text-primary-700 border border-primary-200' : 'text-slate-600 hover:bg-slate-100'}`}
               title="Grid view"
             >
               <Grid className="h-5 w-5" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-primary-100 text-primary-700 border border-primary-200' : 'text-slate-600 hover:bg-slate-100'}`}
               title="List view"
             >
               <List className="h-5 w-5" />

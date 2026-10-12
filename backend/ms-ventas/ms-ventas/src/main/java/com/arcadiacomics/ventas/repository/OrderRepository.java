@@ -14,4 +14,8 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     List<Order> findByUserId(String userId);
 
     List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, LocalDateTime date);
+
+    java.util.Optional<Order> findByBuyOrder(String buyOrder);
+
+    java.util.Optional<Order> findByWebpayToken(String webpayToken);
 }
