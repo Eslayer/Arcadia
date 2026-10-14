@@ -156,8 +156,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </h3>
               <p className="text-xs text-white/90">
                 {lang === 'es'
-                  ? 'Ambiente de Integración Transbank & Despacho Amazon SQS'
-                  : 'Transbank Integration & Amazon SQS Dispatch'}
+                  ? 'Ambiente de Integración Transbank & Fan-Out Amazon SNS / SQS'
+                  : 'Transbank Integration & Amazon SNS / SQS Fan-Out'}
               </p>
             </div>
           </div>
@@ -275,7 +275,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <li>{lang === 'es' ? 'Confirmación automática (commit) en ms-ventas' : 'Automatic commit in ms-ventas'}</li>
                 <li>
                   <strong className="text-amber-700">
-                    {lang === 'es' ? 'Despacho de mensaje a Amazon SQS al completar el pago' : 'Dispatch message to Amazon SQS upon completion'}
+                    {lang === 'es'
+                      ? 'Envío de evento a Amazon SNS con distribución Fan-Out a colas SQS'
+                      : 'Event published to Amazon SNS with Fan-Out to SQS queues'}
                   </strong>
                 </li>
               </ul>
@@ -287,8 +289,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <Shield className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             <span>
               {lang === 'es'
-                ? 'Conexión cifrada SSL con WebPay Plus y cola Amazon SQS en AWS Cloud.'
-                : 'SSL encrypted connection with WebPay Plus and Amazon SQS in AWS Cloud.'}
+                ? 'Conexión cifrada SSL con WebPay Plus, Amazon SNS y colas Amazon SQS.'
+                : 'SSL encrypted connection with WebPay Plus, Amazon SNS and Amazon SQS queues.'}
             </span>
           </div>
 

@@ -22,15 +22,18 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderEventPublisher eventPublisher;
     private final WebpayService webpayService;
+    private final AwsSnsService awsSnsService;
     private final AwsSqsService awsSqsService;
 
     public OrderService(OrderRepository orderRepository,
                         OrderEventPublisher eventPublisher,
                         WebpayService webpayService,
+                        AwsSnsService awsSnsService,
                         AwsSqsService awsSqsService) {
         this.orderRepository = orderRepository;
         this.eventPublisher = eventPublisher;
         this.webpayService = webpayService;
+        this.awsSnsService = awsSnsService;
         this.awsSqsService = awsSqsService;
     }
 
@@ -93,8 +96,8 @@ public class OrderService {
             // 1. Notificar a RabbitMQ (evento interno de la arquitectura Arcadia)
             publishRabbitMqEvent(savedOrder);
 
-            // 2. Notificar a Amazon SQS (cola de eventos de pago en AWS)
-            publishSqsEvent(savedOrder, commitResponse);
+            // 2. Publicar en Amazon SNS para Fan-out hacia múltiples colas Amazon SQS
+            publishSnsFanOutEvent(savedOrder, commitResponse);
 
             return new OrderResponse(savedOrder);
         } else {
@@ -138,7 +141,7 @@ public class OrderService {
         }
     }
 
-    private void publishSqsEvent(Order order, WebpayCommitResponse commitResponse) {
+    private void publishSnsFanOutEvent(Order order, WebpayCommitResponse commitResponse) {
         try {
             List<OrderItemDTO> itemsDTO = order.getItems().stream().map(i -> {
                 OrderItemDTO dto = new OrderItemDTO();
@@ -147,7 +150,7 @@ public class OrderService {
                 return dto;
             }).collect(Collectors.toList());
 
-            PaymentCompletedSqsEvent sqsEvent = new PaymentCompletedSqsEvent(
+            PaymentCompletedEvent snsEvent = new PaymentCompletedEvent(
                     order.getId(),
                     order.getUserId(),
                     order.getTotalAmount(),
@@ -159,10 +162,26 @@ public class OrderService {
                     itemsDTO
             );
 
-            String messageId = awsSqsService.sendPaymentCompletedMessage(sqsEvent);
-            logger.info("✔ Evento de pago WebPay despachado hacia Amazon SQS [Result ID: {}]", messageId);
+            // Publicación al Tópico SNS (el cual distribuye automáticamente por Fan-out a las colas SQS)
+            String messageId = awsSnsService.publishPaymentCompletedEvent(snsEvent);
+            logger.info("✔ Evento de pago WebPay publicado en Amazon SNS (Fan-out a SQS) [Result ID: {}]", messageId);
+
+            // Opcional: si existe una cola SQS directa configurada, se registra también en el servicio SQS
+            PaymentCompletedSqsEvent sqsEvent = new PaymentCompletedSqsEvent(
+                    order.getId(),
+                    order.getUserId(),
+                    order.getTotalAmount(),
+                    order.getBuyOrder(),
+                    commitResponse.getAuthorizationCode(),
+                    commitResponse.getPaymentTypeCode(),
+                    commitResponse.getCardDetail() != null ? commitResponse.getCardDetail().getCardNumber() : null,
+                    "AUTHORIZED",
+                    itemsDTO
+            );
+            awsSqsService.sendPaymentCompletedMessage(sqsEvent);
+
         } catch (Exception e) {
-            logger.error("Error al despachar evento de pago a Amazon SQS: {}", e.getMessage());
+            logger.error("Error al despachar evento de pago a Amazon SNS/SQS: {}", e.getMessage());
         }
     }
 

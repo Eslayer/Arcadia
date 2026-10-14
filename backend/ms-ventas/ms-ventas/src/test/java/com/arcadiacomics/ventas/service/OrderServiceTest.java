@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Tests para OrderService con WebPay y Amazon SQS")
+@DisplayName("Tests para OrderService con WebPay y Amazon SNS / SQS Fan-Out")
 class OrderServiceTest {
 
     @Mock
@@ -35,6 +35,9 @@ class OrderServiceTest {
 
     @Mock
     private WebpayService webpayService;
+
+    @Mock
+    private AwsSnsService awsSnsService;
 
     @Mock
     private AwsSqsService awsSqsService;
@@ -93,12 +96,13 @@ class OrderServiceTest {
         verify(orderRepository, atLeastOnce()).save(any(Order.class));
         verify(webpayService, times(1)).initTransaction(anyString(), eq("user-456"), eq(49.99));
         verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(awsSnsService);
         verifyNoInteractions(awsSqsService);
     }
 
     @Test
-    @DisplayName("Debe confirmar pago exitoso en WebPay y publicar en RabbitMQ y Amazon SQS")
-    void debeConfirmarPagoWebpayYPublicarEnSqs() {
+    @DisplayName("Debe confirmar pago exitoso en WebPay y publicar en RabbitMQ y Amazon SNS (Fan-out)")
+    void debeConfirmarPagoWebpayYPublicarEnSnsFanOut() {
         orderTest.setWebpayToken("token-test-123");
         when(orderRepository.findByWebpayToken("token-test-123")).thenReturn(Optional.of(orderTest));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -121,13 +125,13 @@ class OrderServiceTest {
         // Verificar publicación en RabbitMQ
         verify(eventPublisher, times(1)).publishOrderPaidEvent(any(OrderEventDTO.class));
 
-        // Verificar publicación en Amazon SQS
-        ArgumentCaptor<PaymentCompletedSqsEvent> sqsCaptor = ArgumentCaptor.forClass(PaymentCompletedSqsEvent.class);
-        verify(awsSqsService, times(1)).sendPaymentCompletedMessage(sqsCaptor.capture());
-        PaymentCompletedSqsEvent sqsEvent = sqsCaptor.getValue();
-        assertEquals("order-123", sqsEvent.getOrderId());
-        assertEquals("123456", sqsEvent.getAuthorizationCode());
-        assertEquals("AUTHORIZED", sqsEvent.getStatus());
+        // Verificar publicación en Amazon SNS (Fan-out a SQS)
+        ArgumentCaptor<PaymentCompletedEvent> snsCaptor = ArgumentCaptor.forClass(PaymentCompletedEvent.class);
+        verify(awsSnsService, times(1)).publishPaymentCompletedEvent(snsCaptor.capture());
+        PaymentCompletedEvent snsEvent = snsCaptor.getValue();
+        assertEquals("order-123", snsEvent.getOrderId());
+        assertEquals("123456", snsEvent.getAuthorizationCode());
+        assertEquals("AUTHORIZED", snsEvent.getStatus());
     }
 
     @Test
@@ -143,6 +147,7 @@ class OrderServiceTest {
         assertEquals(OrderStatus.CANCELLED, response.getStatus());
         verify(orderRepository, times(1)).save(orderTest);
         verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(awsSnsService);
         verifyNoInteractions(awsSqsService);
     }
 

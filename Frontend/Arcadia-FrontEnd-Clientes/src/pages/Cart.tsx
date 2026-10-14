@@ -68,8 +68,8 @@ const Cart = () => {
 
       showToast(
         lang === 'es'
-          ? '¡Pago aprobado en WebPay Plus! Evento registrado y cola despachada a Amazon SQS.'
-          : 'Payment approved on WebPay Plus! Event logged and sent to Amazon SQS.',
+          ? '¡Pago aprobado en WebPay Plus! Evento publicado en Amazon SNS y distribuido por Fan-Out a colas SQS.'
+          : 'Payment approved on WebPay Plus! Event published to Amazon SNS and fanned out to SQS queues.',
         'success',
         {
           title: lang === 'es' ? 'Transbank WebPay Plus' : 'Transbank WebPay Plus',
