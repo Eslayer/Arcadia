@@ -12,6 +12,10 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Collections;
 import java.util.Enumeration;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+
 /**
  * Servicio Proxy que reenvía las peticiones HTTP al microservicio destino
  * y registra un log de cada llamada.
@@ -23,8 +27,21 @@ public class ProxyService {
     private final RestTemplate restTemplate;
 
     public ProxyService(ApiLogRepository apiLogRepository) {
-        this.apiLogRepository = apiLogRepository;
-        this.restTemplate = new RestTemplate();
+    this.apiLogRepository = apiLogRepository;
+
+    SimpleClientHttpRequestFactory factory =
+        new SimpleClientHttpRequestFactory() {
+            @Override
+            protected void prepareConnection(
+                HttpURLConnection connection,
+                String httpMethod
+            ) throws IOException {
+                super.prepareConnection(connection, httpMethod);
+                connection.setInstanceFollowRedirects(false);
+            }
+        };
+
+    this.restTemplate = new RestTemplate(factory);
     }
 
     /**
