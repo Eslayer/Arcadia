@@ -35,6 +35,9 @@ class UsuarioServiceImplTest {
     @Mock
     private JwtUtils jwtUtils;
 
+    @Mock
+    private AwsKinesisService awsKinesisService;
+
     @InjectMocks
     private UsuarioServiceImpl usuarioService;
 
@@ -109,9 +112,10 @@ class UsuarioServiceImplTest {
 
         assertNotNull(resultado);
         assertEquals("Juan Pérez", resultado.getNombre());
-        // Verifica que se llamó al encoder antes de guardar
+        // Verifica que se llamó al encoder antes de guardar y se notificó a Kinesis
         verify(passwordEncoder, times(1)).encode("123456");
         verify(usuarioRepository, times(1)).save(any(Usuario.class));
+        verify(awsKinesisService, times(1)).publishUsuarioCreado(usuarioTest);
     }
 
     @Test
@@ -125,6 +129,7 @@ class UsuarioServiceImplTest {
         assertTrue(ex.getMessage().contains("El email ya está registrado"));
         verify(usuarioRepository, never()).save(any());
         verify(passwordEncoder, never()).encode(anyString());
+        verify(awsKinesisService, never()).publishUsuarioCreado(any());
     }
 
     // ── actualizar ────────────────────────────────────────

@@ -22,6 +22,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder   passwordEncoder;
     private final JwtUtils          jwtUtils;
+    private final AwsKinesisService awsKinesisService;
 
     @Override
     @Transactional(readOnly = true)
@@ -60,6 +61,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         log.info("Guardando usuario en base de datos: {}", usuario.getEmail());
         Usuario saved = usuarioRepository.save(usuario);
         log.info("Usuario guardado exitosamente: {}", saved.getEmail());
+
+        awsKinesisService.publishUsuarioCreado(saved);
 
         return saved;
     }
